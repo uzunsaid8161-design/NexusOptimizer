@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Zeiten -->
+    <Duration x:Key="Motion.Instant">0:0:0.08</Duration>
+    <Duration x:Key="Motion.Fast">0:0:0.14</Duration>
+    <Duration x:Key="Motion.Normal">0:0:0.20</Duration>
+    <Duration x:Key="Motion.Slow">0:0:0.32</Duration>
+    <Duration x:Key="Motion.Slower">0:0:0.48</Duration>
+    <Duration x:Key="Motion.Ambient">0:0:1.80</Duration>
+    <Duration x:Key="Motion.Chart">0:0:0.70</Duration>
+    <Duration x:Key="Motion.Ring">0:0:0.40</Duration>
+
+    <!-- Easings -->
+    <CubicEase x:Key="Easing.Standard" EasingMode="EaseOut" />
+    <QuinticEase x:Key="Easing.Emphasized" EasingMode="EaseOut" />
+    <BackEase x:Key="Easing.Overshoot" EasingMode="EaseOut" Amplitude="0.25" />
+    <CubicEase x:Key="Easing.Exit" EasingMode="EaseIn" />
+
+    <!-- Offsets / Scales -->
+    <sys:Double x:Key="Motion.Offset.S">8</sys:Double>
+    <sys:Double x:Key="Motion.Offset.M">16</sys:Double>
+    <sys:Double x:Key="Motion.Offset.L">24</sys:Double>
+    <sys:Double x:Key="Motion.Scale.Hover">1.015</sys:Double>
+    <sys:Double x:Key="Motion.Scale.Press">0.985</sys:Double>
+    <sys:Double x:Key="Motion.Scale.PopStart">0.92</sys:Double>
+    <sys:Double x:Key="Motion.Scale.Pulse">1.06</sys:Double>
+    <sys:Double x:Key="Motion.Sidebar.Collapsed">76</sys:Double>
+    <sys:Double x:Key="Motion.Sidebar.Expanded">236</sys:Double>
+    <sys:Double x:Key="Motion.Stagger.Step">0.035</sys:Double>
+
+</ResourceDictionary>

@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E76E8FAA-F4F5-467C-A62F-90743EE76513}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NexusOptimizer", "src\NexusOptimizer\NexusOptimizer.csproj", "{35C246E7-273E-4E8E-A605-FB3CD7C3D355}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{35C246E7-273E-4E8E-A605-FB3CD7C3D355}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35C246E7-273E-4E8E-A605-FB3CD7C3D355}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35C246E7-273E-4E8E-A605-FB3CD7C3D355}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35C246E7-273E-4E8E-A605-FB3CD7C3D355}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{35C246E7-273E-4E8E-A605-FB3CD7C3D355} = {E76E8FAA-F4F5-467C-A62F-90743EE76513}
+	EndGlobalSection
+EndGlobal

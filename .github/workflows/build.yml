@@ -1,0 +1,39 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore src/NexusOptimizer/NexusOptimizer.csproj
+
+      - name: Build
+        run: dotnet build src/NexusOptimizer/NexusOptimizer.csproj -c Release --no-restore
+
+      - name: Publish (Single File, self-contained)
+        run: >
+          dotnet publish src/NexusOptimizer/NexusOptimizer.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -o publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NexusOptimizer-win-x64
+          path: publish/NexusOptimizer.exe
+          if-no-files-found: error
