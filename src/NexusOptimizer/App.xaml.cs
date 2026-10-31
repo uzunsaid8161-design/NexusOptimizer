@@ -20,7 +20,8 @@ public partial class App : Application
         base.OnStartup(e);
 
         _instanceMutex = new Mutex(true, @"Local\NexusOptimizer.SingleInstance", out bool isFirstInstance);
-        if (!isFirstInstance)
+        bool allowMultiple = e.Args.Contains("--new-instance", StringComparer.OrdinalIgnoreCase);
+        if (!isFirstInstance && !allowMultiple)
         {
             ActivateRunningInstance();
             Shutdown();

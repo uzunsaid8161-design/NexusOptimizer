@@ -66,18 +66,47 @@ public partial class DashboardViewModel : ObservableObject
         if (IsFreeingMemory) return;
 
         IsFreeingMemory = true;
-        MemoryStatus = "Gebe Speicher frei …";
+        MemoryStatus = "Gebe Speicher frei (sanft) …";
 
         try
         {
-            var result = await Task.Run(_memory.Release).ConfigureAwait(true);
-            FreeRamText = $"{result.AvailableAfterGb:0.0} GB frei";
-            MemoryStatus = result.Message;
+            var result = await Task.Run(() => _memory.Release(intensive: false)).ConfigureAwait(true);
+            ApplyMemoryResult(result);
         }
         finally
         {
             IsFreeingMemory = false;
         }
+    }
+
+    /// <summary>
+    /// Intensiv: trimmt zusätzlich die Working Sets anderer Benutzerprozesse.
+    /// Kann Spiele kurz ruckeln lassen, weil Seiten nachgeladen werden müssen.
+    /// </summary>
+    [RelayCommand]
+    private async Task FreeMemoryDeepAsync()
+    {
+        if (IsFreeingMemory) return;
+
+        IsFreeingMemory = true;
+        MemoryStatus = "Trimme Working Sets aller erreichbaren Prozesse …";
+
+        try
+        {
+            var result = await Task.Run(() => _memory.Release(intensive: true)).ConfigureAwait(true);
+            ApplyMemoryResult(result);
+        }
+        finally
+        {
+            IsFreeingMemory = false;
+        }
+    }
+
+    private void ApplyMemoryResult(MemoryReleaseResult result)
+    {
+        FreeRamText = $"{result.AvailableAfterGb:0.0} GB frei" +
+                      (result.WorkingSetFreedMb > 0 ? $" · {result.WorkingSetFreedMb} MB gelöst" : string.Empty);
+        MemoryStatus = result.Message;
     }
 
     private void Refresh()

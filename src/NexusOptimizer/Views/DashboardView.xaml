@@ -132,6 +132,9 @@
 
                     <Button Content="RAM freigeben" Command="{Binding FreeMemoryCommand}"
                             Style="{StaticResource AccentButton}" HorizontalAlignment="Stretch" />
+                    <Button Content="Intensiv freigeben" Command="{Binding FreeMemoryDeepCommand}"
+                            Style="{StaticResource GhostButton}" HorizontalAlignment="Stretch" Margin="0,6,0,0"
+                            ToolTip="Trimmt zusätzlich die Working Sets anderer Programme. Kann Spiele kurz ruckeln lassen." />
                     <TextBlock Text="{Binding FreeRamText}" Foreground="{StaticResource TextPrimary}" FontSize="11"
                                HorizontalAlignment="Center" Margin="0,8,0,0" FontWeight="SemiBold" />
                     <TextBlock Text="{Binding MemoryStatus}" Foreground="{StaticResource TextMuted}" FontSize="10"
