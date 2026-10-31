@@ -1,11 +1,19 @@
+[![Release](https://img.shields.io/github/v/release/uzunsaid8161-design/NexusOptimizer?color=22d3ee)](https://github.com/uzunsaid8161-design/NexusOptimizer/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/uzunsaid8161-design/NexusOptimizer?color=8b5cf6)](LICENSE)
+[![.NET 8](https://img.shields.io/badge/.NET-8-8b5cf6)](https://dotnet.microsoft.com/)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-22d3ee)](#)
 # NexusOptimizer
 
 A Windows gaming optimizer with live FPS monitoring, real system telemetry and reversible tweaks.
 Built with **C# 12 / WPF on .NET 8**, a dark glassmorphism UI, a custom motion system and a single-file executable.
 
+**Download:** [latest release](https://github.com/uzunsaid8161-design/NexusOptimizer/releases/latest) · **Website:** https://uzunsaid8161-design.github.io/NexusOptimizer/
+
 > The UI is intentionally **German** (target audience) – this documentation is English.
 
 ![Dashboard](docs/img/dashboard.png)
+
+![Screenshot](docs/img/promo.png)
 
 ## Features
 
