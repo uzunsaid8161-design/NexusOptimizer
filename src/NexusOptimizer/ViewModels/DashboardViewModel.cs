@@ -17,6 +17,10 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private string _memoryStatus = "Misst vor und nach dem Freigeben.";
     [ObservableProperty] private bool _isFreeingMemory;
 
+    public bool CanFreeMemory => !IsFreeingMemory;
+    public string MemoryButtonText => IsFreeingMemory ? "RAM wird freigegeben …" : "RAM freigeben · 2-GB-Ziel";
+    public event Action<MemoryReleaseResult>? MemoryReleaseCompleted;
+
     [ObservableProperty] private double _fpsValue;
     [ObservableProperty] private double _minValue;
     [ObservableProperty] private double _avgValue;
@@ -43,6 +47,12 @@ public partial class DashboardViewModel : ObservableObject
         _timer.Start();
     }
 
+    partial void OnIsFreeingMemoryChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanFreeMemory));
+        OnPropertyChanged(nameof(MemoryButtonText));
+    }
+
     private void OnSystemUpdated(SystemSample sample)
     {
         // UI-Thread: Werte gebündelt übernehmen
@@ -66,11 +76,11 @@ public partial class DashboardViewModel : ObservableObject
         if (IsFreeingMemory) return;
 
         IsFreeingMemory = true;
-        MemoryStatus = "Gebe Speicher frei (sanft) …";
+        MemoryStatus = "Suche freigebbare Hintergrundspeicherbereiche; Vordergrund-App bleibt unberührt …";
 
         try
         {
-            var result = await Task.Run(() => _memory.Release(intensive: false)).ConfigureAwait(true);
+            var result = await Task.Run(() => _memory.Release(intensive: true, targetGb: 2.0)).ConfigureAwait(true);
             ApplyMemoryResult(result);
         }
         finally
@@ -80,20 +90,19 @@ public partial class DashboardViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Intensiv: trimmt zusätzlich die Working Sets anderer Benutzerprozesse.
-    /// Kann Spiele kurz ruckeln lassen, weil Seiten nachgeladen werden müssen.
+    /// Sanfter Modus: versucht nur den NexusOptimizer-eigenen Speicher zu bereinigen.
     /// </summary>
     [RelayCommand]
-    private async Task FreeMemoryDeepAsync()
+    private async Task FreeMemorySoftAsync()
     {
         if (IsFreeingMemory) return;
 
         IsFreeingMemory = true;
-        MemoryStatus = "Trimme Working Sets aller erreichbaren Prozesse …";
+        MemoryStatus = "Sanfte Freigabe läuft …";
 
         try
         {
-            var result = await Task.Run(() => _memory.Release(intensive: true)).ConfigureAwait(true);
+            var result = await Task.Run(() => _memory.Release(intensive: false, targetGb: 0)).ConfigureAwait(true);
             ApplyMemoryResult(result);
         }
         finally
@@ -107,15 +116,23 @@ public partial class DashboardViewModel : ObservableObject
         FreeRamText = $"{result.AvailableAfterGb:0.0} GB frei" +
                       (result.WorkingSetFreedMb > 0 ? $" · {result.WorkingSetFreedMb} MB gelöst" : string.Empty);
         MemoryStatus = result.Message;
+        MemoryReleaseCompleted?.Invoke(result);
     }
 
     private void Refresh()
     {
         double value = _fps.CurrentFps;
-        if (value < 10 || value > 300) return;
-
         FpsValue = value;
-        FrameTimeText = (1000.0 / value).ToString("0,00") + " ms";
+        FrameTimeText = _fps.AverageFrameTimeMs > 0
+            ? _fps.AverageFrameTimeMs.ToString("0.00") + " ms"
+            : "—";
+
+        if (value <= 0)
+        {
+            IsMonitoring = false;
+            StatusText = "Warte auf Compositor-Frames";
+            return;
+        }
 
         _history.Add(value);
         if (_history.Count > 120) _history.RemoveAt(0);
@@ -127,9 +144,9 @@ public partial class DashboardViewModel : ObservableObject
         Low01Value = _fps.LowPercentile(0.001);
 
         FpsHistory.Add(value);
-        if (FpsHistory.Count > 60) FpsHistory.RemoveAt(0);
+        if (FpsHistory.Count > 120) FpsHistory.RemoveAt(0);
 
         IsMonitoring = true;
-        StatusText = "Monitoring aktiv · 5 Samples/s";
+        StatusText = "App-Compositor · 2 Samples/s · letzte 60 Sekunden";
     }
 }

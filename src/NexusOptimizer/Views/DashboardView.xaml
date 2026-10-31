@@ -30,7 +30,7 @@
                                 <DropShadowEffect Color="#34D399" BlurRadius="12" ShadowDepth="0" Opacity="0.9" />
                             </Ellipse.Effect>
                         </Ellipse>
-                        <TextBlock Text="LIVE-FPS" Style="{StaticResource CardTitle}" Margin="8,0,0,0" />
+                        <TextBlock Text="APP-COMPOSITOR-FPS" Style="{StaticResource CardTitle}" Margin="8,0,0,0" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
@@ -130,15 +130,18 @@
 
                     <Border Height="1" Background="#14FFFFFF" Margin="0,16,0,12" />
 
-                    <Button Content="RAM freigeben" Command="{Binding FreeMemoryCommand}"
-                            Style="{StaticResource AccentButton}" HorizontalAlignment="Stretch" />
-                    <Button Content="Intensiv freigeben" Command="{Binding FreeMemoryDeepCommand}"
+                    <Button Content="{Binding MemoryButtonText}" Command="{Binding FreeMemoryCommand}"
+                            Style="{StaticResource AccentButton}" HorizontalAlignment="Stretch" IsEnabled="{Binding CanFreeMemory}" />
+                    <Button Content="Sanft · nur NexusOptimizer" Command="{Binding FreeMemorySoftCommand}"
                             Style="{StaticResource GhostButton}" HorizontalAlignment="Stretch" Margin="0,6,0,0"
-                            ToolTip="Trimmt zusätzlich die Working Sets anderer Programme. Kann Spiele kurz ruckeln lassen." />
+                            IsEnabled="{Binding CanFreeMemory}"
+                            ToolTip="Bereinigt nur den eigenen App-Arbeitsspeicher; greift keine anderen Programme an." />
                     <TextBlock Text="{Binding FreeRamText}" Foreground="{StaticResource TextPrimary}" FontSize="11"
                                HorizontalAlignment="Center" Margin="0,8,0,0" FontWeight="SemiBold" />
                     <TextBlock Text="{Binding MemoryStatus}" Foreground="{StaticResource TextMuted}" FontSize="10"
                                TextWrapping="Wrap" Margin="0,4,0,0" TextAlignment="Center" />
+                    <TextBlock Text="Ziel: bis zu 2 GB zusätzlich verfügbar machen. Aktive Vordergrund-App wird nicht getrimmt; Windows kann keine feste Menge garantieren."
+                               Foreground="#73809A" FontSize="9" TextWrapping="Wrap" Margin="0,5,0,0" TextAlignment="Center" />
 
                     <Border Height="1" Background="#14FFFFFF" Margin="0,12,0,10" />
 

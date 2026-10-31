@@ -9,7 +9,9 @@ public partial class OptimizationItem : ObservableObject
     public required string Description { get; init; }
     public required string Risk { get; init; }
     public bool NeedsAdmin { get; init; }
-    public bool IsAvailable { get; set; } = true;
+    public bool IsOneShot { get; init; }
+    public bool SupportsRollback { get; init; }
+    [ObservableProperty] private bool _isAvailable = true;
 
     [ObservableProperty] private bool _isEnabled;
     [ObservableProperty] private string _status = string.Empty;

@@ -17,8 +17,8 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Content="Alles zurücksetzen" Command="{Binding ResetAllCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,0" />
-                    <Button Content="Alles optimieren" Command="{Binding ApplyAllCommand}" Style="{StaticResource AccentButton}" />
+                    <Button Content="Gesicherte zurücksetzen" Command="{Binding ResetAllCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,0" />
+                    <Button Content="Sichere Tweaks anwenden" Command="{Binding ApplyAllCommand}" Style="{StaticResource AccentButton}" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -58,10 +58,32 @@
                                                TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
 
-                                <CheckBox Grid.Column="1" Style="{StaticResource ToggleSwitch}"
-                                          IsChecked="{Binding IsEnabled, Mode=TwoWay}"
-                                          IsEnabled="{Binding IsAvailable, Mode=OneWay}"
-                                          VerticalAlignment="Center" Margin="20,0,0,0" />
+                                <Grid Grid.Column="1" VerticalAlignment="Center" Margin="20,0,0,0">
+                                    <CheckBox IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                              IsEnabled="{Binding IsAvailable, Mode=OneWay}">
+                                        <CheckBox.Style>
+                                            <Style TargetType="CheckBox" BasedOn="{StaticResource ToggleSwitch}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOneShot}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </CheckBox.Style>
+                                    </CheckBox>
+                                    <Button Content="Einmal ausführen"
+                                            Command="{Binding DataContext.RunOneShotCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Setter Property="IsEnabled" Value="{Binding IsAvailable}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOneShot}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
                             </Grid>
                         </Border>
                     </DataTemplate>

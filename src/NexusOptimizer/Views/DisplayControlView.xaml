@@ -1,0 +1,215 @@
+<UserControl x:Class="NexusOptimizer.Views.DisplayControlView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="clr-namespace:NexusOptimizer.Behaviors">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <Border Style="{StaticResource GlassCard}" Padding="22" Margin="0,0,0,14"
+                    b:Animations.Entry="Pop" b:Animations.Hover="Card">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="DISPLAY CONTROL CENTER" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="Bildschirmdaten und unterstützte Einstellungen an einem Ort."
+                                   Foreground="{StaticResource TextPrimary}" FontSize="14" Margin="0,7,0,0" />
+                        <TextBlock Text="Diese Seite bleibt im normalen App-Fenster. Es wird kein HUD über Spiele oder Videos gelegt."
+                                   Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,5,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding MonitorCount, StringFormat={}{0} Monitore}" Foreground="{StaticResource Cyan}"
+                                   VerticalAlignment="Center" Margin="0,0,14,0" />
+                        <Button Content="Neu einlesen" Command="{Binding RefreshDisplaysCommand}" Style="{StaticResource GhostButton}"
+                                IsEnabled="{Binding CanEditDisplay}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <ItemsControl ItemsSource="{Binding Displays}" Margin="0,0,0,14">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,10,0" MinWidth="240">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="8" Height="8" Fill="{StaticResource Cyan}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="{Binding}" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding CurrentMode}" Foreground="{StaticResource Cyan}" FontSize="12" Margin="0,8,0,0" />
+                                <TextBlock Text="{Binding Position}" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="0,5,0,0" />
+                                <TextBlock Text="{Binding HdrStatus}" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border Style="{StaticResource GlassCard}" Padding="22" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="AUSGEWÄHLTES DISPLAY" Style="{StaticResource CardTitle}" />
+                    <ComboBox ItemsSource="{Binding Displays}" SelectedItem="{Binding SelectedDisplay, Mode=TwoWay}"
+                              IsEnabled="{Binding CanEditDisplay}" MinWidth="280" HorizontalAlignment="Left" Margin="0,10,0,0" />
+                    <UniformGrid Columns="4" Margin="0,16,0,0">
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock Text="AUFLÖSUNG" Style="{StaticResource CardTitle}" />
+                            <TextBlock Text="{Binding SelectedDisplay.CurrentMode}" Foreground="{StaticResource TextPrimary}" FontSize="16" Margin="0,6,0,0" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock Text="FARBTIEFE" Style="{StaticResource CardTitle}" />
+                            <TextBlock Text="{Binding SelectedDisplay.BitsPerPixel, StringFormat={}{0}-Bit}" Foreground="{StaticResource TextPrimary}" FontSize="16" Margin="0,6,0,0" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock Text="SKALIERUNG" Style="{StaticResource CardTitle}" />
+                            <TextBlock Text="{Binding SelectedDisplay.Scaling}" Foreground="{StaticResource TextPrimary}" FontSize="16" Margin="0,6,0,0" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="HERSTELLER-ID" Style="{StaticResource CardTitle}" />
+                            <TextBlock Text="{Binding SelectedDisplay.ManufacturerText}" Foreground="{StaticResource TextPrimary}" FontSize="16" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </UniformGrid>
+                    <TextBlock Text="{Binding SelectedDisplay.ColorProfileText, StringFormat=Aktives Farbprofil: {0}}"
+                               Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,14,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource GlassCard}" Padding="22" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="HELLIGKEIT" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding BrightnessStatus}" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,7,0,0" TextWrapping="Wrap" />
+                        <TextBlock Text="Zusätzlich zur Monitorsteuerung dimmt die App das Bild über die Grafikkarte – ohne Overlay über Videos." Foreground="{StaticResource TextMuted}" FontSize="10" Margin="0,4,0,0" TextWrapping="Wrap" />
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="50"/></Grid.ColumnDefinitions>
+                            <Slider Minimum="0" Maximum="100" TickFrequency="1" IsMoveToPointEnabled="True"
+                                    Value="{Binding BrightnessValue, Mode=TwoWay}"
+                                    IsEnabled="{Binding CanAdjustBrightness}" Style="{StaticResource DisplaySlider}" VerticalAlignment="Center"
+                                    PreviewMouseLeftButtonUp="OnBrightnessSliderReleased"
+                                    ToolTip="Regler ziehen und loslassen: Helligkeit wird automatisch angewendet." />
+                            <TextBlock Grid.Column="1" Text="{Binding BrightnessValue, StringFormat={}{0}%}" Foreground="{StaticResource Cyan}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Content="−10%" Command="{Binding DecreaseBrightnessCommand}" Style="{StaticResource GhostButton}"
+                                    IsEnabled="{Binding CanAdjustBrightness}" />
+                            <Button Content="Helligkeit anwenden" Command="{Binding SetBrightnessCommand}" Style="{StaticResource AccentButton}"
+                                    Margin="8,0" IsEnabled="{Binding CanAdjustBrightness}" />
+                            <Button Content="+10%" Command="{Binding IncreaseBrightnessCommand}" Style="{StaticResource GhostButton}"
+                                    IsEnabled="{Binding CanAdjustBrightness}" />
+                            <Button Content="50%" Command="{Binding ResetBrightnessCommand}" Style="{StaticResource GhostButton}"
+                                    Margin="8,0,0,0" IsEnabled="{Binding CanAdjustBrightness}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource GlassCard}" Padding="22" Margin="8,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="AUFLÖSUNG &amp; BILDRATE" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="Nur Modi, die Windows und der Grafiktreiber aktuell anbieten."
+                                   Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,7,0,10" TextWrapping="Wrap" />
+                        <ComboBox ItemsSource="{Binding Modes}" SelectedItem="{Binding SelectedMode, Mode=TwoWay}"
+                                  IsEnabled="{Binding CanEditDisplay}" MinWidth="260" HorizontalAlignment="Left" />
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Höchste Hz auswählen" Command="{Binding SelectHighestRefreshCommand}" Style="{StaticResource GhostButton}"
+                                    IsEnabled="{Binding CanEditDisplay}" />
+                            <TextBlock Text="{Binding HighestRefreshText}" Foreground="{StaticResource Cyan}" FontSize="10"
+                                       VerticalAlignment="Center" Margin="10,0,0,0" />
+                        </StackPanel>
+                        <Button Content="Modus sicher testen" Command="{Binding ApplyModeCommand}" Style="{StaticResource AccentButton}"
+                                HorizontalAlignment="Left" Margin="0,12,0,0" IsEnabled="{Binding CanEditDisplay}" />
+                        <TextBlock Text="Änderungen werden zunächst nur vorübergehend angewendet. Ohne Bestätigung stellt NexusOptimizer den vorherigen Modus wieder her."
+                                   Foreground="{StaticResource TextMuted}" FontSize="10" Margin="0,10,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Style="{StaticResource GlassCard}" Padding="18" Margin="0,0,0,14"
+                    BorderBrush="{StaticResource Warning}" BorderThickness="1"
+                    Visibility="{Binding HasPendingChange, Converter={StaticResource BoolToVisibility}}">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding PendingText}" Foreground="{StaticResource Warning}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="14,0,0,0">
+                        <Button Content="Beibehalten" Command="{Binding KeepModeCommand}" Style="{StaticResource AccentButton}" />
+                        <Button Content="Jetzt zurücksetzen" Command="{Binding RollbackModeCommand}" Style="{StaticResource GhostButton}" Margin="8,0,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource GlassCard}" Padding="22" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="SCHNELLPROFILE" Style="{StaticResource CardTitle}" />
+                    <TextBlock Text="Ein Klick wählt einen passenden, unterstützten Modus. Auflösungs- und Hz-Änderungen müssen bestätigt werden."
+                               Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,7,0,14" TextWrapping="Wrap" />
+                    <UniformGrid Columns="4">
+                        <Button Command="{Binding ApplyPresetCommand}" CommandParameter="competitive" Style="{StaticResource GhostButton}"
+                                IsEnabled="{Binding CanEditDisplay}" Margin="0,0,8,0">
+                            <StackPanel><TextBlock Text="⚡ Competitive" FontWeight="SemiBold"/><TextBlock Text="Höchste Hz bei aktueller Auflösung" FontSize="10" Foreground="{StaticResource TextMuted}" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
+                        </Button>
+                        <Button Command="{Binding ApplyPresetCommand}" CommandParameter="movie" Style="{StaticResource GhostButton}"
+                                IsEnabled="{Binding CanEditDisplay}" Margin="4,0">
+                            <StackPanel><TextBlock Text="▶ Film" FontWeight="SemiBold"/><TextBlock Text="Aktuelle Auflösung, Bildrate nahe 60 Hz" FontSize="10" Foreground="{StaticResource TextMuted}" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
+                        </Button>
+                        <Button Command="{Binding ApplyPresetCommand}" CommandParameter="office" Style="{StaticResource GhostButton}"
+                                IsEnabled="{Binding CanEditDisplay}" Margin="4,0">
+                            <StackPanel><TextBlock Text="▤ Büro" FontWeight="SemiBold"/><TextBlock Text="Ausgewogene Helligkeit bei 50%" FontSize="10" Foreground="{StaticResource TextMuted}" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
+                        </Button>
+                        <Button Command="{Binding ApplyPresetCommand}" CommandParameter="night" Style="{StaticResource GhostButton}"
+                                IsEnabled="{Binding CanEditDisplay}" Margin="8,0,0,0">
+                            <StackPanel><TextBlock Text="☾ Nacht" FontWeight="SemiBold"/><TextBlock Text="Helligkeit auf 35%, falls unterstützt" FontSize="10" Foreground="{StaticResource TextMuted}" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
+                        </Button>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Border Style="{StaticResource GlassCard}" Padding="22" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="DISPLAYPROFILE" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="Sichere den aktuellen Modus und eine unterstützte Helligkeit lokal für dieses Display."
+                                   Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,7,0,12" TextWrapping="Wrap" />
+                        <TextBox Text="{Binding ProfileName, UpdateSourceTrigger=PropertyChanged}" MinWidth="220" HorizontalAlignment="Left"
+                                 IsEnabled="{Binding CanEditDisplay}"
+                                 ToolTip="Profilname" />
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Aktuellen Modus speichern" Command="{Binding SaveProfileCommand}" Style="{StaticResource GhostButton}"
+                                    IsEnabled="{Binding CanEditDisplay}" />
+                            <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" MinWidth="240" Margin="10,0,0,0"
+                                      IsEnabled="{Binding CanEditDisplay}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Profil sicher anwenden" Command="{Binding ApplyProfileCommand}" Style="{StaticResource AccentButton}"
+                                    IsEnabled="{Binding CanEditDisplay}" />
+                            <Button Content="Profil löschen" Command="{Binding DeleteProfileCommand}" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                                    IsEnabled="{Binding CanEditDisplay}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Profile importieren" Command="{Binding ImportProfilesCommand}" Style="{StaticResource GhostButton}" />
+                            <Button Content="Profile exportieren" Command="{Binding ExportProfilesCommand}" Style="{StaticResource GhostButton}" Margin="8,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource GlassCard}" Padding="22" Margin="8,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="HDR, NACHTMODUS &amp; FARBEN" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="HDR- und Nachtmodusstatus werden von Windows verwaltet. Farbprofile lassen sich über die Windows-Farbverwaltung öffnen."
+                                   Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,7,0,12" TextWrapping="Wrap" />
+                        <TextBlock Text="HDR" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding HdrStatus}" Foreground="{StaticResource TextPrimary}" FontSize="11" Margin="0,3,0,8" TextWrapping="Wrap" />
+                        <TextBlock Text="ADAPTIVE SYNC" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="{Binding AdaptiveSyncStatus}" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,3,0,12" TextWrapping="Wrap" />
+                        <WrapPanel>
+                            <Button Content="Anzeigeeinstellungen" Command="{Binding OpenDisplaySettingsCommand}" CommandParameter="display" Style="{StaticResource GhostButton}" Margin="0,0,8,8" />
+                            <Button Content="Erweiterte Anzeige" Command="{Binding OpenDisplaySettingsCommand}" CommandParameter="advanced" Style="{StaticResource GhostButton}" Margin="0,0,8,8" />
+                            <Button Content="Nachtmodus" Command="{Binding OpenDisplaySettingsCommand}" CommandParameter="nightlight" Style="{StaticResource GhostButton}" Margin="0,0,8,8" />
+                            <Button Content="Farbverwaltung" Command="{Binding OpenDisplaySettingsCommand}" CommandParameter="color" Style="{StaticResource GhostButton}" Margin="0,0,8,8" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <TextBlock Text="{Binding Status}" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="2,0,0,10" TextWrapping="Wrap" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

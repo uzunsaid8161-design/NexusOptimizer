@@ -1,10 +1,12 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="clr-namespace:NexusOptimizer.Behaviors">
 
     <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
     <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas</FontFamily>
 
     <Style x:Key="GlassCard" TargetType="Border">
+        <Setter Property="b:Animations.Hover" Value="Card" />
         <Setter Property="Background" Value="{StaticResource GlassFill}" />
         <Setter Property="BorderBrush" Value="{StaticResource GlassBorder}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -21,6 +23,7 @@
     </Style>
 
     <Style x:Key="NavButton" TargetType="RadioButton">
+        <Setter Property="b:Animations.Hover" Value="Nav" />
         <Setter Property="MinWidth" Value="48" />
         <Setter Property="Height" Value="46" />
         <Setter Property="Margin" Value="6,3" />
@@ -50,6 +53,7 @@
     </Style>
 
     <Style x:Key="WindowButton" TargetType="Button">
+        <Setter Property="b:Animations.Hover" Value="Control" />
         <Setter Property="Width" Value="46" />
         <Setter Property="Height" Value="32" />
         <Setter Property="Foreground" Value="#8B949E" />
@@ -112,6 +116,7 @@
     </Style>
 
     <Style x:Key="AccentButton" TargetType="Button">
+        <Setter Property="b:Animations.Hover" Value="Control" />
         <Setter Property="Foreground" Value="#05121A" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -133,6 +138,7 @@
     </Style>
 
     <Style x:Key="GhostButton" TargetType="Button">
+        <Setter Property="b:Animations.Hover" Value="Control" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Cursor" Value="Hand" />
@@ -191,6 +197,93 @@
                             </Track.Thumb>
                             <Track.IncreaseRepeatButton>
                                 <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" />
+                            </Track.IncreaseRepeatButton>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Background" Value="#151C28" />
+        <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+        <Setter Property="BorderBrush" Value="#354155" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="ItemContainerStyle">
+            <Setter.Value>
+                <Style TargetType="ComboBoxItem">
+                    <Setter Property="Background" Value="#151C28" />
+                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+                    <Setter Property="Padding" Value="10,7" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ComboBoxItem">
+                                <Border x:Name="itemBackground" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsHighlighted" Value="True">
+                                        <Setter TargetName="itemBackground" Property="Background" Value="#26394A" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="itemBackground" Property="Background" Value="#1E3543" />
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Opacity" Value="0.45" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="TextBox">
+        <Setter Property="Background" Value="#111722" />
+        <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+        <Setter Property="BorderBrush" Value="#354155" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="CaretBrush" Value="{StaticResource Cyan}" />
+        <Setter Property="SelectionBrush" Value="#6622D3EE" />
+    </Style>
+
+    <Style x:Key="DisplaySlider" TargetType="Slider">
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Foreground" Value="{StaticResource Cyan}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid Height="28" VerticalAlignment="Center">
+                        <Track x:Name="PART_Track" VerticalAlignment="Center" Focusable="False">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.DecreaseLarge}" IsTabStop="False" Height="4" Background="{StaticResource Cyan}">
+                                    <RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Height="4" Background="{TemplateBinding Background}" CornerRadius="2" /></ControlTemplate></RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.DecreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Width="16" Height="16" Focusable="False">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Border x:Name="thumbBorder" Background="#E6EDF3" BorderBrush="{StaticResource Cyan}" BorderThickness="2" CornerRadius="8" />
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="thumbBorder" Property="Background" Value="{StaticResource Cyan}" /></Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.IncreaseLarge}" IsTabStop="False" Height="4" Background="#303B4D">
+                                    <RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Height="4" Background="{TemplateBinding Background}" CornerRadius="2" /></ControlTemplate></RepeatButton.Template>
+                                </RepeatButton>
                             </Track.IncreaseRepeatButton>
                         </Track>
                     </Grid>

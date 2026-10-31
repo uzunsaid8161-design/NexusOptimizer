@@ -39,10 +39,15 @@ public partial class MainViewModel : ObservableObject
         (PageTitle, PageSubtitle) = target switch
         {
             0 => ("Dashboard", "Live-FPS, Frametimes und Systemauslastung"),
-            1 => ("Statistik", "Sessions und Bestwerte – in Arbeit"),
+            1 => ("Statistik", "Live-FPS, Frametimes und Systemlast der aktuellen App-Sitzung"),
             2 => ("Optimizer", "Tweaks mit Rollback und Protokoll"),
-            3 => ("Overlay", "In-Game-Overlay – in Arbeit"),
-            4 => ("Einstellungen", "Konfiguration – in Arbeit"),
+            3 => ("Overlay", "FPS und Systemwerte als click-through HUD anzeigen"),
+            4 => ("Einstellungen", "Bewegung, Windows-Autostart und lokale Daten verwalten"),
+            5 => ("Autostart", "Run/RunOnce und Startordner durchsuchen, filtern und gesichert verwalten"),
+            6 => ("Backup", "Sitzungsdaten lokal sichern und wiederherstellen"),
+            7 => ("Cleaner", "Alte temporäre Dateien sicher bereinigen"),
+            8 => ("Display Control", "Monitore, Helligkeit und tatsächlich verfügbare Anzeigemodi verwalten"),
+            9 => ("Prozessmanager", "Live-Ressourcen, Prozessdetails, Gaming-Beobachtung und lokaler Verlauf"),
             _ => (PageTitle, PageSubtitle)
         };
 

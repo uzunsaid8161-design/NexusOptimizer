@@ -17,6 +17,17 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // WPF writes temporary cursor files when GridView headers are hovered.
+        // Use an app-owned writable folder if the Windows TEMP folder is restricted.
+        try
+        {
+            string appTemp = Path.Combine(AppPaths.Root, "temp");
+            Directory.CreateDirectory(appTemp);
+            Environment.SetEnvironmentVariable("TEMP", appTemp);
+            Environment.SetEnvironmentVariable("TMP", appTemp);
+        }
+        catch { }
+
         base.OnStartup(e);
 
         _instanceMutex = new Mutex(true, @"Local\NexusOptimizer.SingleInstance", out bool isFirstInstance);
@@ -33,17 +44,33 @@ public partial class App : Application
             .MinimumLevel.Debug()
             .WriteTo.File(Path.Combine(AppPaths.Logs, "nexus-.log"), rollingInterval: RollingInterval.Day)
             .CreateLogger();
+        Log.Information("NexusOptimizer startup entered; firstInstance={FirstInstance}, newInstance={NewInstance}", isFirstInstance, allowMultiple);
 
         var services = new ServiceCollection();
         services.AddSingleton<FpsSampler>();
         services.AddSingleton<SystemMonitor>();
         services.AddSingleton<Database>();
         services.AddSingleton<OptimizerService>();
+        services.AddSingleton<StartupManagerService>();
+        services.AddSingleton<BackupService>();
+        services.AddSingleton<CleanerService>();
+        services.AddSingleton<DisplayControlService>();
+        services.AddSingleton<ProcessManagerService>();
+        services.AddSingleton<OverlayWindowService>();
         services.AddSingleton<DashboardViewModel>();
+        services.AddSingleton<StatisticsViewModel>();
         services.AddSingleton<OptimizerViewModel>();
+        services.AddSingleton<StartupManagerViewModel>();
+        services.AddSingleton<BackupViewModel>();
+        services.AddSingleton<CleanerViewModel>();
+        services.AddSingleton<OverlayViewModel>();
+        services.AddSingleton<SettingsViewModel>();
+        services.AddSingleton<DisplayControlViewModel>();
+        services.AddSingleton<ProcessManagerViewModel>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
         Services = services.BuildServiceProvider();
+        Log.Information("Service provider ready");
 
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += (_, args) => Log.Error(args.ExceptionObject as Exception, "Unhandled");
@@ -51,13 +78,27 @@ public partial class App : Application
         try
         {
             Services.GetRequiredService<Database>().Initialize();
+            Log.Information("Database initialization completed");
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Datenbank-Initialisierung fehlgeschlagen");
         }
 
-        Services.GetRequiredService<MainWindow>().Show();
+        try
+        {
+            Log.Information("Resolving main window");
+            var mainWindow = Services.GetRequiredService<MainWindow>();
+            Log.Information("Main window constructed");
+            mainWindow.Show();
+            Log.Information("Main window shown");
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Main window startup failed");
+            MessageBox.Show($"NexusOptimizer konnte nicht gestartet werden:\n\n{ex.Message}", "NexusOptimizer", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(-1);
+        }
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
@@ -89,6 +130,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        DisplayControlService.RestoreSoftwareBrightness();
         Log.CloseAndFlush();
         base.OnExit(e);
     }

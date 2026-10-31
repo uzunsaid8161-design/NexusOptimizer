@@ -9,11 +9,40 @@ namespace NexusOptimizer.Services;
 
 public static class AppPaths
 {
-    public static string Root { get; } = Path.Combine(
+    private static string LocalRoot { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NexusOptimizer");
+
+    public static string Root { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "LocalLow", "NexusOptimizer");
 
     public static string Logs => Path.Combine(Root, "logs");
     public static string DatabaseFile => Path.Combine(Root, "nexus.db");
+
+    public static void MigrateLegacyData()
+    {
+        if (!Directory.Exists(LocalRoot)) return;
+
+        try
+        {
+            Directory.CreateDirectory(Root);
+            foreach (string directory in Directory.EnumerateDirectories(LocalRoot, "*", SearchOption.AllDirectories))
+            {
+                string targetDirectory = Path.Combine(Root, Path.GetRelativePath(LocalRoot, directory));
+                Directory.CreateDirectory(targetDirectory);
+            }
+
+            foreach (string file in Directory.EnumerateFiles(LocalRoot, "*", SearchOption.AllDirectories))
+            {
+                string targetFile = Path.Combine(Root, Path.GetRelativePath(LocalRoot, file));
+                Directory.CreateDirectory(Path.GetDirectoryName(targetFile)!);
+                if (!File.Exists(targetFile)) File.Copy(file, targetFile);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Legacy-Daten konnten nicht vollständig migriert werden; vorhandene Quelldaten bleiben erhalten");
+        }
+    }
 }
 
 /// <summary>
@@ -22,13 +51,21 @@ public static class AppPaths
 /// </summary>
 public sealed class FpsSampler : IDisposable
 {
-    private readonly Stopwatch _watch = Stopwatch.StartNew();
-    private int _frames;
-    private readonly List<double> _frameTimes = new();
+    private readonly Queue<FrameSample> _history = new();
+    private readonly Queue<FrameSample> _oneSecond = new();
+    private const int MaxHistorySamples = 30_000;
+    private static readonly long HistoryTicks = Stopwatch.Frequency * 60L;
+    private long _lastTimestamp;
+    private long _lastPublishTimestamp;
+    private double _oneSecondFrameTimeTotal;
+    private double _currentFps;
+    private double _averageFrameTimeMs;
 
-    public double CurrentFps { get; private set; }
-    public int FramesLastSecond { get; private set; }
-    public double AverageFrameTimeMs { get; private set; }
+    private readonly record struct FrameSample(long Timestamp, double FrameTimeMs);
+
+    public double CurrentFps => HasRecentFrame() ? _currentFps : 0;
+    public int FramesLastSecond => HasRecentFrame() ? _oneSecond.Count : 0;
+    public double AverageFrameTimeMs => HasRecentFrame() ? _averageFrameTimeMs : 0;
 
     public event Action<double>? FpsUpdated;
 
@@ -39,32 +76,54 @@ public sealed class FpsSampler : IDisposable
 
     private void OnRendering(object? sender, EventArgs e)
     {
-        _frames++;
-        double elapsed = _watch.Elapsed.TotalMilliseconds;
-        if (elapsed < 1000) return;
+        long now = Stopwatch.GetTimestamp();
+        if (_lastTimestamp != 0)
+        {
+            long delta = now - _lastTimestamp;
+            // Ignore suspend/resume gaps; they are not rendered frames.
+            if (delta > 0 && delta <= Stopwatch.Frequency)
+            {
+                double frameTimeMs = delta * 1000.0 / Stopwatch.Frequency;
+                var sample = new FrameSample(now, frameTimeMs);
+                _history.Enqueue(sample);
+                _oneSecond.Enqueue(sample);
+                _oneSecondFrameTimeTotal += frameTimeMs;
 
-        CurrentFps = _frames * 1000.0 / elapsed;
-        FramesLastSecond = _frames;
-        AverageFrameTimeMs = CurrentFps > 0 ? 1000.0 / CurrentFps : 0;
+                while (_oneSecond.TryPeek(out var first) && now - first.Timestamp > Stopwatch.Frequency)
+                {
+                    _oneSecond.Dequeue();
+                    _oneSecondFrameTimeTotal -= first.FrameTimeMs;
+                }
 
-        _frameTimes.Add(AverageFrameTimeMs);
-        if (_frameTimes.Count > 20000) _frameTimes.RemoveAt(0);
+                while (_history.TryPeek(out var old) &&
+                       (now - old.Timestamp > HistoryTicks || _history.Count > MaxHistorySamples))
+                    _history.Dequeue();
 
-        _frames = 0;
-        _watch.Restart();
-        FpsUpdated?.Invoke(CurrentFps);
+                _currentFps = _oneSecond.Count;
+                _averageFrameTimeMs = _oneSecond.Count == 0 ? 0 : _oneSecondFrameTimeTotal / _oneSecond.Count;
+            }
+        }
+
+        _lastTimestamp = now;
+        if (_lastPublishTimestamp == 0 || now - _lastPublishTimestamp >= Stopwatch.Frequency / 4)
+        {
+            _lastPublishTimestamp = now;
+            FpsUpdated?.Invoke(CurrentFps);
+        }
     }
 
     public double LowPercentile(double fraction)
     {
-        if (_frameTimes.Count == 0) return 0;
-        var sorted = new List<double>(_frameTimes);
+        if (!double.IsFinite(fraction) || fraction <= 0 || fraction > 1 || _history.Count == 0) return 0;
+        var sorted = _history.Select(x => x.FrameTimeMs).ToList();
         sorted.Sort();
-        int index = (int)Math.Floor((sorted.Count - 1) * (1.0 - fraction));
-        index = Math.Clamp(index, 0, sorted.Count - 1);
-        double worstFrame = sorted[index];
-        return worstFrame > 0 ? 1000.0 / worstFrame : 0;
+        int slowFrameCount = Math.Clamp((int)Math.Ceiling(sorted.Count * fraction), 1, sorted.Count);
+        double slowFrameAverage = sorted.Skip(sorted.Count - slowFrameCount).Average();
+        return slowFrameAverage > 0 ? 1000.0 / slowFrameAverage : 0;
     }
+
+    private bool HasRecentFrame() => _lastTimestamp != 0 &&
+        Stopwatch.GetTimestamp() - _lastTimestamp <= Stopwatch.Frequency;
 
     public void Dispose() => CompositionTarget.Rendering -= OnRendering;
 }
@@ -189,11 +248,18 @@ public sealed class SystemMonitor : IDisposable
 /// <summary>SQLite-Speicher für Sessions, FPS-Samples, Optimierungen und Einstellungen.</summary>
 public sealed class Database
 {
-    private string ConnectionString => $"Data Source={AppPaths.DatabaseFile}";
+    private static string ConnectionString => new SqliteConnectionStringBuilder
+    {
+        DataSource = AppPaths.DatabaseFile,
+        Mode = SqliteOpenMode.ReadWriteCreate,
+        DefaultTimeout = 10,
+        Pooling = false
+    }.ToString();
 
     public void Initialize()
     {
         Directory.CreateDirectory(AppPaths.Root);
+        AppPaths.MigrateLegacyData();
         using var connection = new SqliteConnection(ConnectionString);
         connection.Open();
         using var cmd = connection.CreateCommand();

@@ -202,36 +202,27 @@ public sealed class MotionService
 
     public void CrossFade(ContentControl host, FrameworkElement next, double slide = 20)
     {
-        var previous = host.Content as UIElement;
-        if (!Enabled || previous is null)
+        if (ReferenceEquals(host.Content, next)) return;
+
+        if (host.Content is UIElement previous)
         {
-            host.Content = next;
-            return;
+            previous.BeginAnimation(UIElement.OpacityProperty, null);
+            previous.Opacity = 1;
         }
 
-        var easeOut = E("Easing.Exit", new CubicEase { EasingMode = EasingMode.EaseIn });
-        var fadeOut = new DoubleAnimation(1, 0, new Duration(T("Motion.Fast", TimeSpan.FromMilliseconds(140))))
-        {
-            EasingFunction = easeOut,
-            FillBehavior = FillBehavior.Stop
-        };
+        var (_, translate) = EnsureTransform(next);
+        next.BeginAnimation(UIElement.OpacityProperty, null);
+        translate.BeginAnimation(TranslateTransform.YProperty, null);
+        next.Opacity = 1;
+        translate.Y = 0;
+        host.Content = next;
 
-        fadeOut.Completed += (_, _) =>
-        {
-            previous.Opacity = 1;
-            host.Content = next;
+        if (!Enabled) return;
 
-            var (_, translate) = EnsureTransform(next);
-            translate.Y = 0;
-            next.Opacity = 1;
-
-            var easeIn = E("Easing.Emphasized", new QuinticEase { EasingMode = EasingMode.EaseOut });
-            var dur = T("Motion.Normal", TimeSpan.FromMilliseconds(200));
-            Animate(next, UIElement.OpacityProperty, 0, 1, dur, easeIn, TimeSpan.Zero);
-            Animate(translate, TranslateTransform.YProperty, slide, 0, dur, easeIn, TimeSpan.Zero);
-        };
-
-        previous.BeginAnimation(UIElement.OpacityProperty, fadeOut, HandoffBehavior.SnapshotAndReplace);
+        var easing = E("Easing.Emphasized", new QuinticEase { EasingMode = EasingMode.EaseOut });
+        var duration = T("Motion.Normal", TimeSpan.FromMilliseconds(200));
+        Animate(next, UIElement.OpacityProperty, 0, 1, duration, easing, TimeSpan.Zero);
+        Animate(translate, TranslateTransform.YProperty, slide, 0, duration, easing, TimeSpan.Zero);
     }
 
     /// <summary>Cached-Effekt nur setzen, wenn die Karte bewegt wird (GPU-freundlich).</summary>

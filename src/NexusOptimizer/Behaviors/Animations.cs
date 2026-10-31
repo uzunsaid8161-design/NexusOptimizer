@@ -79,10 +79,29 @@ public static class Animations
         if (d is not FrameworkElement element) return;
         element.MouseEnter -= OnMouseEnter;
         element.MouseLeave -= OnMouseLeave;
-        if (e.NewValue is string mode && mode == "Card")
+        if (e.NewValue is string mode && (mode is "Card" or "Control" or "Nav"))
         {
             element.MouseEnter += OnMouseEnter;
             element.MouseLeave += OnMouseLeave;
+        }
+    }
+
+    /// <summary>Replays declared entrance motion when a cached page is visited again.</summary>
+    public static void ReplayEntries(DependencyObject root)
+    {
+        if (!MotionService.Current.Enabled) return;
+        Visit(root);
+
+        static void Visit(DependencyObject node)
+        {
+            if (node is FrameworkElement element && GetEntry(element) is not null)
+                PlayEntry(element);
+            try
+            {
+                int count = VisualTreeHelper.GetChildrenCount(node);
+                for (int i = 0; i < count; i++) Visit(VisualTreeHelper.GetChild(node, i));
+            }
+            catch { }
         }
     }
 
@@ -90,38 +109,39 @@ public static class Animations
     {
         if (sender is not FrameworkElement element) return;
         var motion = MotionService.Current;
-        if (!motion.Enabled) return;
-
+        string mode = GetHover(element) ?? "Card";
         var (scale, translate) = MotionService.EnsureTransform(element);
-        var glow = EnsureGlow(element);
-        var dur = motion.T("Motion.Fast", TimeSpan.FromMilliseconds(140));
-        var ease = motion.E("Easing.Standard", new CubicEase { EasingMode = EasingMode.EaseOut });
+        var dur = motion.T(mode == "Card" ? "Motion.Normal" : "Motion.Fast",
+            mode == "Card" ? TimeSpan.FromMilliseconds(190) : TimeSpan.FromMilliseconds(150));
+        var ease = motion.E("Easing.Overshoot", new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.12 });
+        double targetScale = motion.Enabled ? HoverScale(element, mode, motion) : 1;
+        double lift = motion.Enabled ? mode == "Card" ? -3 : mode == "Nav" ? -1 : -1.5 : 0;
 
-        double hoverScale = motion.V("Motion.Scale.Hover", 1.015);
-        Animate(scale, ScaleTransform.ScaleXProperty, hoverScale, dur, ease);
-        Animate(scale, ScaleTransform.ScaleYProperty, hoverScale, dur, ease);
-        Animate(translate, TranslateTransform.YProperty, -2, dur, ease);
-        glow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(1, new Duration(dur)) { EasingFunction = ease, FillBehavior = FillBehavior.Stop }, HandoffBehavior.SnapshotAndReplace);
+        AnimateToState(scale, ScaleTransform.ScaleXProperty, targetScale, dur, ease, motion.Enabled);
+        AnimateToState(scale, ScaleTransform.ScaleYProperty, targetScale, dur, ease, motion.Enabled);
+        AnimateToState(translate, TranslateTransform.YProperty, lift, dur, ease, motion.Enabled);
+        if (mode != "Nav")
+        {
+            var glow = EnsureGlow(element);
+            AnimateToState(glow, DropShadowEffect.OpacityProperty, motion.Enabled ? mode == "Card" ? 0.78 : 0.58 : 0,
+                dur, ease, motion.Enabled);
+        }
     }
 
     private static void OnMouseLeave(object sender, MouseEventArgs e)
     {
         if (sender is not FrameworkElement element) return;
-        if (element.RenderTransform is not TransformGroup group || group.Children.Count < 2) return;
-
         var motion = MotionService.Current;
-        if (!motion.Enabled) return;
-
-        var scale = (ScaleTransform)group.Children[0];
-        var translate = (TranslateTransform)group.Children[1];
-        var glow = EnsureGlow(element);
-        var dur = motion.T("Motion.Fast", TimeSpan.FromMilliseconds(140));
+        string mode = GetHover(element) ?? "Card";
+        var (scale, translate) = MotionService.EnsureTransform(element);
+        var dur = motion.T(mode == "Card" ? "Motion.Normal" : "Motion.Fast",
+            mode == "Card" ? TimeSpan.FromMilliseconds(180) : TimeSpan.FromMilliseconds(135));
         var ease = motion.E("Easing.Exit", new CubicEase { EasingMode = EasingMode.EaseIn });
-
-        Animate(scale, ScaleTransform.ScaleXProperty, 1, dur, ease);
-        Animate(scale, ScaleTransform.ScaleYProperty, 1, dur, ease);
-        Animate(translate, TranslateTransform.YProperty, 0, dur, ease);
-        glow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(0, new Duration(dur)) { FillBehavior = FillBehavior.Stop }, HandoffBehavior.SnapshotAndReplace);
+        AnimateToState(scale, ScaleTransform.ScaleXProperty, 1, dur, ease, motion.Enabled);
+        AnimateToState(scale, ScaleTransform.ScaleYProperty, 1, dur, ease, motion.Enabled);
+        AnimateToState(translate, TranslateTransform.YProperty, 0, dur, ease, motion.Enabled);
+        if (mode != "Nav")
+            AnimateToState(EnsureGlow(element), DropShadowEffect.OpacityProperty, 0, dur, ease, motion.Enabled);
     }
 
     private static DropShadowEffect EnsureGlow(FrameworkElement element)
@@ -138,6 +158,29 @@ public static class Animations
         };
         element.Effect = glow;
         return glow;
+    }
+
+    private static double HoverScale(FrameworkElement element, string mode, MotionService motion) => mode switch
+    {
+        "Nav" => motion.V("Motion.Scale.NavHover", 1.06),
+        "Control" => motion.V("Motion.Scale.ControlHover", 1.045),
+        _ => motion.V("Motion.Scale.Hover", 1.035)
+    };
+
+    private static void AnimateToState(DependencyObject target, DependencyProperty property, double value,
+        TimeSpan duration, IEasingFunction easing, bool animate)
+    {
+        double from = (double)target.GetValue(property);
+        if (target is IAnimatable animatable) animatable.BeginAnimation(property, null, HandoffBehavior.SnapshotAndReplace);
+        target.SetValue(property, value);
+        if (!animate || duration <= TimeSpan.Zero || Math.Abs(from - value) < 0.0005 || target is not IAnimatable animationTarget) return;
+
+        var animation = new DoubleAnimation(from, value, new Duration(duration))
+        {
+            EasingFunction = easing,
+            FillBehavior = FillBehavior.Stop
+        };
+        animationTarget.BeginAnimation(property, animation, HandoffBehavior.SnapshotAndReplace);
     }
 
     // ---------- Press ----------
@@ -166,12 +209,14 @@ public static class Animations
         if (!motion.Enabled) return;
 
         var (scale, _) = MotionService.EnsureTransform(element);
-        double target = down ? motion.V("Motion.Scale.Press", 0.985) : 1.0;
+        double target = !motion.Enabled ? 1 : down
+            ? motion.V("Motion.Scale.Press", 0.985)
+            : element.IsMouseOver && GetHover(element) is string mode ? HoverScale(element, mode, motion) : 1.0;
         var dur = motion.T("Motion.Instant", TimeSpan.FromMilliseconds(80));
         var ease = motion.E("Easing.Standard", new CubicEase { EasingMode = EasingMode.EaseOut });
 
-        Animate(scale, ScaleTransform.ScaleXProperty, target, dur, ease);
-        Animate(scale, ScaleTransform.ScaleYProperty, target, dur, ease);
+        AnimateToState(scale, ScaleTransform.ScaleXProperty, target, dur, ease, motion.Enabled);
+        AnimateToState(scale, ScaleTransform.ScaleYProperty, target, dur, ease, motion.Enabled);
     }
 
     private static void Animate(DependencyObject target, DependencyProperty property, double to, TimeSpan duration, IEasingFunction easing)

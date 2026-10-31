@@ -1,0 +1,127 @@
+<UserControl x:Class="NexusOptimizer.Views.ProcessManagerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="clr-namespace:NexusOptimizer.Behaviors"
+             Loaded="OnLoaded" Unloaded="OnUnloaded">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
+            <UniformGrid Columns="6" Margin="0,0,0,12">
+                <Border Style="{StaticResource GlassCard}" Padding="14" Margin="0,0,8,0" b:Animations.Entry="Pop">
+                    <StackPanel><TextBlock Text="GESAMT-CPU" Style="{StaticResource CardTitle}"/><TextBlock Text="{Binding CpuText}" Foreground="{StaticResource Cyan}" FontSize="23" FontWeight="SemiBold" Margin="0,5,0,0"/><TextBlock Text="{Binding CpuTrend}" Foreground="{StaticResource TextMuted}" FontFamily="{StaticResource MonoFont}" FontSize="11" Margin="0,4,0,0"/></StackPanel>
+                </Border>
+                <Border Style="{StaticResource GlassCard}" Padding="14" Margin="0,0,8,0" b:Animations.Entry="Stagger" b:Animations.EntryIndex="1">
+                    <StackPanel><TextBlock Text="ARBEITSSPEICHER" Style="{StaticResource CardTitle}"/><TextBlock Text="{Binding RamText}" Foreground="{StaticResource TextPrimary}" FontSize="18" FontWeight="SemiBold" Margin="0,8,0,0"/><TextBlock Text="{Binding RamTrend}" Foreground="{StaticResource TextMuted}" FontFamily="{StaticResource MonoFont}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
+                </Border>
+                <Border Style="{StaticResource GlassCard}" Padding="14" Margin="0,0,8,0" b:Animations.Entry="Stagger" b:Animations.EntryIndex="2">
+                    <StackPanel><TextBlock Text="DATENTRÄGER" Style="{StaticResource CardTitle}"/><TextBlock Text="{Binding DiskText}" Foreground="{StaticResource TextPrimary}" FontSize="21" FontWeight="SemiBold" Margin="0,8,0,0"/><TextBlock Text="Gesamtrate" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="0,4,0,0"/></StackPanel>
+                </Border>
+                <Border Style="{StaticResource GlassCard}" Padding="14" Margin="0,0,8,0" b:Animations.Entry="Stagger" b:Animations.EntryIndex="3">
+                    <StackPanel><TextBlock Text="NETZWERK" Style="{StaticResource CardTitle}"/><TextBlock Text="{Binding NetworkText}" Foreground="{StaticResource TextPrimary}" FontSize="21" FontWeight="SemiBold" Margin="0,8,0,0"/><TextBlock Text="Gesamtrate" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="0,4,0,0"/></StackPanel>
+                </Border>
+                <Border Style="{StaticResource GlassCard}" Padding="14" Margin="0,0,8,0" b:Animations.Entry="Stagger" b:Animations.EntryIndex="4">
+                    <StackPanel><TextBlock Text="PROZESSE" Style="{StaticResource CardTitle}"/><TextBlock Text="{Binding ProcessCountText}" Foreground="{StaticResource TextPrimary}" FontSize="23" FontWeight="SemiBold" Margin="0,8,0,0"/><TextBlock Text="laufend" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="0,4,0,0"/></StackPanel>
+                </Border>
+                <Border Style="{StaticResource GlassCard}" Padding="14" b:Animations.Entry="Stagger" b:Animations.EntryIndex="5">
+                    <StackPanel><TextBlock Text="ANWENDUNGEN" Style="{StaticResource CardTitle}"/><TextBlock Text="{Binding ApplicationCountText}" Foreground="{StaticResource TextPrimary}" FontSize="23" FontWeight="SemiBold" Margin="0,8,0,0"/><TextBlock Text="mit Fenster" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="0,4,0,0"/></StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <Border Style="{StaticResource GlassCard}" Padding="14" Margin="0,0,0,12">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="2.1*"/><ColumnDefinition Width="1.15*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="36" VerticalContentAlignment="Center" ToolTip="Name, PID, Herausgeber, Status oder Pfad durchsuchen" />
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SortBy}" Margin="8,0" ToolTip="Sortierung" />
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding StatusFilter}" Margin="0,0,8,0" Width="125" ToolTip="Prozessfilter" />
+                    <ComboBox Grid.Column="3" ItemsSource="{Binding RefreshOptions}" SelectedItem="{Binding RefreshSeconds}" Margin="0,0,8,0" Width="78" ToolTip="Aktualisierung in Sekunden" />
+                    <Button Grid.Column="4" Content="Aktualisieren" Command="{Binding RefreshCommand}" Style="{StaticResource GhostButton}" />
+                    <TextBlock Text="⌕ Suche: Name / PID / Herausgeber / Pfad" IsHitTestVisible="False" Foreground="{StaticResource TextMuted}" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11">
+                        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding SearchText}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource GlassCard}" Padding="0" Margin="0,0,0,12" b:Animations.Entry="Pop">
+                <DockPanel>
+                    <Grid DockPanel.Dock="Top" Margin="16,12,16,7">
+                        <TextBlock Text="LAUFENDE PROZESSE" Style="{StaticResource CardTitle}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ResultSummary}" Foreground="{StaticResource TextMuted}" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ListView ItemsSource="{Binding VisibleProcesses}" SelectedItem="{Binding SelectedProcess}" Height="330"
+                              Background="#111722" Foreground="{StaticResource TextPrimary}" BorderThickness="0"
+                              ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                              HorizontalContentAlignment="Stretch">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Height" Value="38"/><Setter Property="Padding" Value="8,2"/><Setter Property="Foreground" Value="{StaticResource TextPrimary}"/><Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListViewItem"><Border x:Name="row" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"><GridViewRowPresenter Content="{TemplateBinding Content}" Columns="{Binding View.Columns, RelativeSource={RelativeSource AncestorType=ListView}}" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter TargetName="row" Property="Background" Value="#28304A66"/></Trigger><DataTrigger Binding="{Binding IsMarked}" Value="True"><Setter TargetName="row" Property="Background" Value="#26314B3A"/></DataTrigger><DataTrigger Binding="{Binding DataContext.CompactView, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True"><Setter Property="Height" Value="27"/></DataTrigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.View><GridView>
+                            <GridViewColumn Header="Prozess" Width="190" DisplayMemberBinding="{Binding Name}"/>
+                            <GridViewColumn Header="PID" Width="62" DisplayMemberBinding="{Binding ProcessId}"/>
+                            <GridViewColumn Header="CPU" Width="68" DisplayMemberBinding="{Binding CpuText}"/>
+                            <GridViewColumn Header="RAM" Width="88" DisplayMemberBinding="{Binding MemoryText}"/>
+                            <GridViewColumn Header="I/O Lesen · Schreiben" Width="148" DisplayMemberBinding="{Binding IoText}"/>
+                            <GridViewColumn Header="Herausgeber" Width="150" DisplayMemberBinding="{Binding Publisher}"/>
+                            <GridViewColumn Header="Status" Width="95"><GridViewColumn.CellTemplate><DataTemplate><StackPanel Orientation="Horizontal"><TextBlock Text="●" Foreground="#8B5CF6" Visibility="{Binding IsWatched, Converter={StaticResource BoolToVisibility}}" Margin="0,0,5,0"/><TextBlock Text="{Binding Status}"/><TextBlock Text=" · geschützt" Foreground="{StaticResource Warning}" Visibility="{Binding IsProtected, Converter={StaticResource BoolToVisibility}}" FontSize="9"/></StackPanel></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                        </GridView></ListView.View>
+                    </ListView>
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource GlassCard}" Padding="18" Margin="0,0,0,12" b:Animations.Entry="Stagger" b:Animations.EntryIndex="1">
+                <StackPanel>
+                    <Grid><TextBlock Text="PROZESSDETAILS" Style="{StaticResource CardTitle}"/><CheckBox Content="Kompakte Liste" IsChecked="{Binding CompactView}" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Right"/></Grid>
+                    <TextBlock Text="{Binding DetailsText}" Foreground="{StaticResource TextPrimary}" FontSize="12" Margin="0,12,0,12" TextWrapping="Wrap"/>
+                    <WrapPanel>
+                        <Button Content="{Binding EndButtonText}" Command="{Binding EndProcessCommand}" Style="{StaticResource AccentButton}" Margin="0,0,8,7"/>
+                        <Button Content="Markierung umschalten" Command="{Binding ToggleMarkCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,7"/>
+                        <Button Content="Pfad öffnen" Command="{Binding OpenProcessPathCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,7"/>
+                        <Button Content="Dateieigenschaften" Command="{Binding ShowFilePropertiesCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,7"/>
+                        <Button Content="Prozessbaum &amp; Dienste" Command="{Binding LoadProcessTreeCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,7"/>
+                        <Button Content="Infos kopieren" Command="{Binding CopyProcessInfoCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,7"/>
+                        <Button Content="Zum Gaming-Profil" Command="{Binding AddWatchedProcessCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,7"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding ProcessTreeText}" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Status}" Foreground="{StaticResource Cyan}" FontSize="11" Margin="0,10,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Netzwerk wird als Gesamtrate gemessen. Prozess-I/O umfasst Windows-Lese-/Schreibvorgänge; ein reiner Datenträgeranteil ist pro Prozess nicht verfügbar." Foreground="{StaticResource TextMuted}" FontSize="10" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="1.08*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="1.5*"/></Grid.ColumnDefinitions>
+                <Border Style="{StaticResource GlassCard}" Padding="18" Grid.Column="0">
+                    <StackPanel>
+                        <TextBlock Text="GAMING-PROFIL" Style="{StaticResource CardTitle}"/>
+                        <TextBlock Text="Beobachte ausgewählte Spiele und Hintergrundprozesse." Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,8,0,10" TextWrapping="Wrap"/>
+                        <ListBox ItemsSource="{Binding WatchedProcesses}" SelectedItem="{Binding SelectedWatchedProcess}" Height="105" Background="#111722" Foreground="{StaticResource TextPrimary}" BorderBrush="#263246">
+                            <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" Padding="5"/></DataTemplate></ListBox.ItemTemplate>
+                        </ListBox>
+                        <WrapPanel Margin="0,9,0,0">
+                            <Button Content="Aus Profil entfernen" Command="{Binding RemoveWatchedProcessCommand}" Style="{StaticResource GhostButton}" Margin="0,0,7,7"/>
+                            <Button Content="{Binding GamingButtonText}" Command="{Binding ToggleGamingSessionCommand}" Style="{StaticResource AccentButton}" Margin="0,0,0,7"/>
+                        </WrapPanel>
+                        <CheckBox Content="Ausgewählte Prozesse lokal aufzeichnen" IsChecked="{Binding RecordHistory}" Foreground="{StaticResource TextPrimary}" Margin="0,3,0,7"/>
+                        <ItemsControl ItemsSource="{Binding GamingEvents}" Height="112"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="{StaticResource TextMuted}" FontSize="10" Margin="2,3"/></DataTemplate></ItemsControl.ItemTemplate><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource GlassCard}" Padding="18" Grid.Column="2">
+                    <StackPanel>
+                        <Grid><TextBlock Text="PROZESSVERLAUF" Style="{StaticResource CardTitle}" VerticalAlignment="Center"/><Button Content="Verlauf löschen" Command="{Binding ClearHistoryCommand}" Style="{StaticResource GhostButton}" HorizontalAlignment="Right"/></Grid>
+                        <TextBlock Text="Nur Prozesse aus dem Gaming-Profil. Daten bleiben lokal; Aufzeichnung ist standardmäßig aus." Foreground="{StaticResource TextMuted}" FontSize="10" Margin="0,7,0,9" TextWrapping="Wrap"/>
+                        <ListView ItemsSource="{Binding History}" Height="225" Background="#111722" Foreground="{StaticResource TextPrimary}" BorderThickness="0" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True">
+                            <ListView.View><GridView>
+                                <GridViewColumn Header="Prozess" Width="120" DisplayMemberBinding="{Binding Name}"/>
+                                <GridViewColumn Header="PID" Width="48" DisplayMemberBinding="{Binding ProcessId}"/>
+                                <GridViewColumn Header="Start" Width="128" DisplayMemberBinding="{Binding StartedAt, StringFormat={}{0:dd.MM HH:mm:ss}}"/>
+                                <GridViewColumn Header="Dauer" Width="70" DisplayMemberBinding="{Binding DurationMinutes, StringFormat={}{0:0} min}"/>
+                                <GridViewColumn Header="Max CPU" Width="62" DisplayMemberBinding="{Binding MaximumCpuPercent, StringFormat={}{0:0.0}%}"/>
+                                <GridViewColumn Header="Ø RAM" Width="75" DisplayMemberBinding="{Binding AverageRamMb, StringFormat={}{0:0} MB}"/>
+                            </GridView></ListView.View>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -2,7 +2,6 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-        xmlns:ui="clr-namespace:NexusOptimizer.Controls"
         Title="NexusOptimizer"
         Icon="pack://application:,,,/Assets/app.png"
         Width="1280" Height="820" MinWidth="1100" MinHeight="700"
@@ -107,6 +106,41 @@
                             <TextBlock x:Name="NavLabel4" Text="Einstellungen" Margin="10,0,0,0" VerticalAlignment="Center" Opacity="0" />
                         </StackPanel>
                     </RadioButton>
+                    <RadioButton Style="{StaticResource NavButton}" ToolTip="Autostart"
+                                 Command="{Binding NavigateCommand}" CommandParameter="5">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="↻" FontSize="16" Width="22" />
+                            <TextBlock x:Name="NavLabel5" Text="Autostart" Margin="10,0,0,0" VerticalAlignment="Center" Opacity="0" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavButton}" ToolTip="Backup"
+                                 Command="{Binding NavigateCommand}" CommandParameter="6">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⬇" FontSize="16" Width="22" />
+                            <TextBlock x:Name="NavLabel6" Text="Backup" Margin="10,0,0,0" VerticalAlignment="Center" Opacity="0" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavButton}" ToolTip="Cleaner"
+                                 Command="{Binding NavigateCommand}" CommandParameter="7">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⌫" FontSize="16" Width="22" />
+                            <TextBlock x:Name="NavLabel7" Text="Cleaner" Margin="10,0,0,0" VerticalAlignment="Center" Opacity="0" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavButton}" ToolTip="Display Control"
+                                 Command="{Binding NavigateCommand}" CommandParameter="8">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="▣" FontSize="16" Width="22" />
+                            <TextBlock x:Name="NavLabel8" Text="Display Control" Margin="10,0,0,0" VerticalAlignment="Center" Opacity="0" />
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavButton}" ToolTip="Prozessmanager"
+                                 Command="{Binding NavigateCommand}" CommandParameter="9">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="▦" FontSize="16" Width="22" />
+                            <TextBlock x:Name="NavLabel9" Text="Prozessmanager" Margin="10,0,0,0" VerticalAlignment="Center" Opacity="0" />
+                        </StackPanel>
+                    </RadioButton>
                 </StackPanel>
             </Border>
 
@@ -133,7 +167,7 @@
                     </StackPanel>
                 </Grid>
 
-                <ui:CrossFadeHost x:Name="PageHost" Grid.Row="1" />
+                <ContentControl x:Name="PageHost" Grid.Row="1" ClipToBounds="True" />
             </Grid>
         </Grid>
     </Grid>

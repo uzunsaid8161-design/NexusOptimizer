@@ -22,7 +22,9 @@
     <sys:Double x:Key="Motion.Offset.S">8</sys:Double>
     <sys:Double x:Key="Motion.Offset.M">16</sys:Double>
     <sys:Double x:Key="Motion.Offset.L">24</sys:Double>
-    <sys:Double x:Key="Motion.Scale.Hover">1.015</sys:Double>
+    <sys:Double x:Key="Motion.Scale.Hover">1.035</sys:Double>
+    <sys:Double x:Key="Motion.Scale.ControlHover">1.045</sys:Double>
+    <sys:Double x:Key="Motion.Scale.NavHover">1.06</sys:Double>
     <sys:Double x:Key="Motion.Scale.Press">0.985</sys:Double>
     <sys:Double x:Key="Motion.Scale.PopStart">0.92</sys:Double>
     <sys:Double x:Key="Motion.Scale.Pulse">1.06</sys:Double>

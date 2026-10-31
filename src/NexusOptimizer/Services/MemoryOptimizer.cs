@@ -8,6 +8,8 @@ public sealed record MemoryReleaseResult(
     double AvailableBeforeGb,
     double AvailableAfterGb,
     double FreedGb,
+    double TargetGb,
+    bool TargetReached,
     long WorkingSetFreedMb,
     int ProcessesTrimmed,
     bool StandbyPurged,
@@ -36,15 +38,19 @@ public sealed class MemoryOptimizer
     private const uint TokenAdjustPrivileges = 0x0020;
     private const uint TokenQuery = 0x0008;
     private const uint ProcessSetQuota = 0x0100;
-    private const uint ProcessQueryLimitedInformation = 0x1000;
+    private const uint ProcessQueryInformation = 0x0400;
     private const string ProfilePrivilege = "SeProfileSingleProcessPrivilege";
+    private const long Mb = 1024L * 1024L;
+    private const long Gb = 1024L * 1024L * 1024L;
 
     private static readonly HashSet<string> Protected = new(StringComparer.OrdinalIgnoreCase)
     {
-        "System", "Idle", "Registry", "Memory Compression",
+        "System", "Idle", "Registry", "Memory Compression", "explorer", "MsMpEng", "SearchIndexer",
         "smss", "csrss", "wininit", "winlogon", "services", "lsass", "lsm",
         "dwm", "fontdrvhost", "sihost", "ctfmon"
     };
+
+    private sealed record ProcessCandidate(Process Process, long WorkingSetBytes);
 
     public bool IsElevated
     {
@@ -59,9 +65,11 @@ public sealed class MemoryOptimizer
         }
     }
 
-    public MemoryReleaseResult Release(bool intensive)
+    public MemoryReleaseResult Release(bool intensive, double targetGb = 2.0)
     {
-        double availableBefore = GetAvailableGb();
+        targetGb = intensive ? Math.Clamp(targetGb, 0.25, 32.0) : 0;
+        long availableBeforeBytes = GetAvailableBytes();
+        double availableBefore = availableBeforeBytes / (double)Gb;
         bool elevated = IsElevated;
         bool standby = false;
 
@@ -71,64 +79,110 @@ public sealed class MemoryOptimizer
         int trimmed = 0;
         long workingSetFreedBytes = 0;
 
-        TrimCurrentProcess();
+        if (!intensive)
+        {
+            workingSetFreedBytes = TrimCurrentProcess();
+            trimmed = workingSetFreedBytes > 0 ? 1 : 0;
+        }
 
         if (intensive)
         {
+            int foregroundProcessId = GetForegroundProcessId();
+            var candidates = new List<ProcessCandidate>();
             foreach (var process in Process.GetProcesses())
             {
-                using (process)
+                try
+                {
+                    if (process.Id <= 4 || process.Id == Environment.ProcessId || process.Id == foregroundProcessId ||
+                        Protected.Contains(process.ProcessName))
+                    {
+                        process.Dispose();
+                        continue;
+                    }
+                    long workingSet = process.WorkingSet64;
+                    if (workingSet < 8 * Mb) { process.Dispose(); continue; }
+                    candidates.Add(new ProcessCandidate(process, workingSet));
+                }
+                catch { process.Dispose(); }
+            }
+
+            try
+            {
+                foreach (var candidate in candidates.OrderByDescending(x => x.WorkingSetBytes))
                 {
                     try
                     {
-                        if (process.Id <= 4 || Protected.Contains(process.ProcessName)) continue;
-                        if (process.Id == Environment.ProcessId) continue;
-
-                        long before = process.WorkingSet64;
-                        if (!EmptyWorkingSet(process.Handle)) continue;
-
-                        process.Refresh();
-                        long after = process.WorkingSet64;
-                        if (before > after)
+                        IntPtr handle = OpenProcess(ProcessSetQuota | ProcessQueryInformation, false, candidate.Process.Id);
+                        if (handle == IntPtr.Zero) continue;
+                        try
                         {
-                            workingSetFreedBytes += before - after;
-                            trimmed++;
+                            if (!EmptyWorkingSet(handle)) continue;
+                            candidate.Process.Refresh();
+                            long after = candidate.Process.WorkingSet64;
+                            if (candidate.WorkingSetBytes > after)
+                            {
+                                workingSetFreedBytes += candidate.WorkingSetBytes - after;
+                                trimmed++;
+                            }
                         }
+                        finally { CloseHandle(handle); }
                     }
-                    catch
-                    {
-                        // Zugriff verweigert (Systemprozess, andere Session): überspringen.
-                    }
+                    catch { /* Process exited or access denied: continue with other user processes. */ }
+
+                    if (GetAvailableBytes() - availableBeforeBytes >= targetGb * Gb) break;
+                    Thread.Sleep(35);
                 }
+            }
+            finally
+            {
+                foreach (var candidate in candidates) candidate.Process.Dispose();
             }
         }
 
-        Thread.Sleep(400);
+        Thread.Sleep(300);
 
-        double availableAfter = GetAvailableGb();
+        long availableAfterBytes = GetAvailableBytes();
+        double availableAfter = availableAfterBytes / (double)Gb;
         double freedGb = Math.Max(0, availableAfter - availableBefore);
-        long workingSetFreedMb = workingSetFreedBytes / (1024 * 1024);
+        bool targetReached = !intensive || availableAfterBytes - availableBeforeBytes >= targetGb * Gb;
+        long workingSetFreedMb = workingSetFreedBytes / Mb;
 
         string message = intensive
-            ? $"Intensiv: {trimmed} Prozesse getrimmt, {workingSetFreedMb} MB Working Set gelöst, RAM frei {availableBefore:0.0} → {availableAfter:0.0} GB." +
-              (standby ? " Standby-Liste geleert." : elevated ? " Standby-Bereinigung abgelehnt." : " Standby-Liste nur mit Adminrechten.")
-            : $"Sanft: eigener Prozess getrimmt, RAM frei {availableBefore:0.0} → {availableAfter:0.0} GB." +
-              (standby ? " Standby-Liste geleert." : " Standby-Liste nur mit Adminrechten – dafür „Intensiv“ oder App als Administrator starten.");
+            ? targetReached
+                ? $"2-GB-Ziel erreicht: {freedGb:0.00} GB mehr verfügbar. {trimmed} Hintergrundprozesse getrimmt ({workingSetFreedMb} MB Working Set). Es wurden keine Apps geschlossen."
+                : $"2-GB-Ziel nicht erreicht: {freedGb:0.00} GB mehr verfügbar; {workingSetFreedMb} MB Working Set aus {trimmed} Prozessen getrimmt. Windows ließ nicht genug weitere Hintergrundspeicherbereiche sicher frei. Es wurden keine Apps geschlossen."
+            : $"Sanft abgeschlossen: {freedGb:0.00} GB mehr verfügbar. {workingSetFreedBytes / Mb} MB NexusOptimizer-Working-Set bereinigt; andere Programme blieben unberührt.";
+        if (standby) message += " Standby-Cache wurde zusätzlich bereinigt.";
 
         return new MemoryReleaseResult(
-            availableBefore, availableAfter, freedGb, workingSetFreedMb, trimmed, standby, elevated, message);
+            availableBefore, availableAfter, freedGb, targetGb, targetReached, workingSetFreedMb, trimmed, standby, elevated, message);
     }
 
-    private static void TrimCurrentProcess()
-    {
-        try { EmptyWorkingSet(Process.GetCurrentProcess().Handle); } catch { }
-    }
-
-    private static double GetAvailableGb()
+    private static long GetAvailableBytes()
     {
         var status = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
-        if (!GlobalMemoryStatusEx(ref status)) return 0;
-        return status.ullAvailPhys / 1073741824.0;
+        return GlobalMemoryStatusEx(ref status) ? checked((long)status.ullAvailPhys) : 0;
+    }
+
+    private static long TrimCurrentProcess()
+    {
+        try
+        {
+            using var process = Process.GetCurrentProcess();
+            long before = process.WorkingSet64;
+            if (!EmptyWorkingSet(process.Handle)) return 0;
+            process.Refresh();
+            return Math.Max(0, before - process.WorkingSet64);
+        }
+        catch { return 0; }
+    }
+
+    private static int GetForegroundProcessId()
+    {
+        IntPtr window = GetForegroundWindow();
+        if (window == IntPtr.Zero) return 0;
+        GetWindowThreadProcessId(window, out uint processId);
+        return unchecked((int)processId);
     }
 
     private static bool PurgeStandbyList()
@@ -149,7 +203,7 @@ public sealed class MemoryOptimizer
 
         try
         {
-            if (!LookupPrivilegeValue(null, privilege, out long luid)) return false;
+            if (!LookupPrivilegeValue(null, privilege, out LUID luid)) return false;
 
             var tp = new TOKEN_PRIVILEGES { PrivilegeCount = 1, Luid = luid, Attributes = 0x00000002 };
             return AdjustTokenPrivileges(token, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero)
@@ -176,15 +230,27 @@ public sealed class MemoryOptimizer
     private struct TOKEN_PRIVILEGES
     {
         public uint PrivilegeCount;
-        public long Luid;
+        public LUID Luid;
         public uint Attributes;
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LUID { public uint LowPart; public int HighPart; }
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
 
     [DllImport("psapi.dll", SetLastError = true)]
     private static extern bool EmptyWorkingSet(IntPtr hProcess);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenProcess(uint desiredAccess, bool inheritHandle, int processId);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
 
     [DllImport("ntdll.dll")]
     private static extern uint NtSetSystemInformation(int systemInformationClass, IntPtr systemInformation, int systemInformationLength);
@@ -193,7 +259,7 @@ public sealed class MemoryOptimizer
     private static extern bool OpenProcessToken(IntPtr processHandle, uint desiredAccess, out IntPtr tokenHandle);
 
     [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern bool LookupPrivilegeValue(string? systemName, string name, out long luid);
+    private static extern bool LookupPrivilegeValue(string? systemName, string name, out LUID luid);
 
     [DllImport("advapi32.dll", SetLastError = true)]
     private static extern bool AdjustTokenPrivileges(IntPtr tokenHandle, bool disableAllPrivileges,
