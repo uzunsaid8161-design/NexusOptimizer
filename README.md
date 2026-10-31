@@ -11,6 +11,8 @@ Built with **C# 12 / WPF on .NET 8**, a dark glassmorphism UI, a custom motion s
 
 > The UI is intentionally **German** (target audience) – this documentation is English.
 
+![Dashboard demo](docs/img/demo.gif)
+
 ![Dashboard](docs/img/dashboard.png)
 
 ![Screenshot](docs/img/promo.png)
