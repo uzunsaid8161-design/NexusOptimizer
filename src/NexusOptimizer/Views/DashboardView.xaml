@@ -130,6 +130,15 @@
 
                     <Border Height="1" Background="#14FFFFFF" Margin="0,16,0,12" />
 
+                    <Button Content="RAM freigeben" Command="{Binding FreeMemoryCommand}"
+                            Style="{StaticResource AccentButton}" HorizontalAlignment="Stretch" />
+                    <TextBlock Text="{Binding FreeRamText}" Foreground="{StaticResource TextPrimary}" FontSize="11"
+                               HorizontalAlignment="Center" Margin="0,8,0,0" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding MemoryStatus}" Foreground="{StaticResource TextMuted}" FontSize="10"
+                               TextWrapping="Wrap" Margin="0,4,0,0" TextAlignment="Center" />
+
+                    <Border Height="1" Background="#14FFFFFF" Margin="0,12,0,10" />
+
                     <TextBlock Text="Frametime-Warnung" Style="{StaticResource CardTitle}" />
                     <TextBlock Text="&gt; 16,7 ms = gelb · &gt; 33 ms = rot" Foreground="#5C6880" FontSize="10" Margin="0,4,0,0" TextWrapping="Wrap" />
                 </StackPanel>
