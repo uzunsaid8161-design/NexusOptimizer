@@ -2,14 +2,20 @@
 [![License: MIT](https://img.shields.io/github/license/uzunsaid8161-design/NexusOptimizer?color=8b5cf6)](LICENSE)
 [![.NET 8](https://img.shields.io/badge/.NET-8-8b5cf6)](https://dotnet.microsoft.com/)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-22d3ee)](#)
-# NexusOptimizer
+# NexusOptimizer v1.1.0
 
 A Windows gaming optimizer with live FPS monitoring, real system telemetry and reversible tweaks.
 Built with **C# 12 / WPF on .NET 8**, a dark glass UI and a self-contained folder deployment.
 
-**Download:** [latest release](https://github.com/uzunsaid8161-design/NexusOptimizer/releases/latest) · **Website:** https://uzunsaid8161-design.github.io/NexusOptimizer/
+**Version 1.1.0 · Windows x64:** [Download ZIP](https://github.com/uzunsaid8161-design/NexusOptimizer/releases/latest/download/NexusOptimizer-win-x64.zip) · [Release notes](https://github.com/uzunsaid8161-design/NexusOptimizer/releases/latest) · **Website:** https://uzunsaid8161-design.github.io/NexusOptimizer/
 
-> The UI is intentionally **German** (target audience) – this documentation is English.
+**Kurzbeschreibung:** NexusOptimizer zeigt Systemlast und FPS der eigenen Oberfläche und bündelt Autostart, lokale Backups, Temp-Cleaner, Prozessverwaltung, Overlay und Monitorsteuerung. Änderungen sind nachvollziehbar; wo unterstützt, lassen sie sich zurücksetzen. Die FPS-Anzeige misst nicht direkt ein Spiel. Die ZIP-Version enthält .NET und braucht keine separate .NET-Installation.
+
+**Windows-Hinweis:** SmartScreen kann bei einer neuen oder nicht öffentlich signierten Version warnen. Die Version wird ohne öffentliches Code-Signing-Zertifikat veröffentlicht.
+
+> The UI is intentionally **German** (target audience); detailed technical documentation is in English.
+
+## Screenshots
 
 ![Dashboard demo](docs/img/demo.gif)
 
@@ -29,6 +35,8 @@ Built with **C# 12 / WPF on .NET 8**, a dark glass UI and a self-contained folde
 | **Startup manager** | Searches and filters Run/RunOnce entries from 32- and 64-bit HKCU/HKLM views plus both Windows Startup folders. Identical registry entries are shown once; changes are backed up and reversible. HKLM and shared-folder entries need administrator rights. |
 | **Backup** | Creates and restores local SQLite database backups. A schema check runs before restore, and the current database is copied to a safety file first. |
 | **Cleaner** | Reviews files in the current user's Temp folder that have been unchanged for seven days. Confirmed cleanup moves them to the Windows Recycle Bin. |
+| **Process manager** | Live process list with search, CPU/RAM sorting, status filters, watch list and session history. |
+| **Display control** | Shows detected monitors and driver-reported modes; supports brightness, temporary mode testing with rollback and local display profiles when the monitor/driver exposes them. |
 | **Overlay** | Click-through, topmost HUD for app-compositor FPS and selected system readings. It does not steal focus; exclusive fullscreen may hide it. |
 | **Settings** | Saves motion level and speed, manages this installation's Windows startup entry, and opens the local data folder. |
 | **Sessions** | SQLite schema for `Sessions`, `FpsSamples`, `Optimizations`, `Settings`; WAL mode |
